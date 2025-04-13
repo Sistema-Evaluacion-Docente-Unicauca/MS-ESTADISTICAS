@@ -21,3 +21,17 @@ logging:
     max-history: ${LOG_FILE_MAX_HISTORY}
   pattern:
     file: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  default-produces-media-type: application/json
+
+info:
+  app:
+    title: Microservicio Estadísticas - Evaluación Docente
+    description: API para estadísticas sobre evaluaciones por fuente y actividad
+    version: 1.0.0

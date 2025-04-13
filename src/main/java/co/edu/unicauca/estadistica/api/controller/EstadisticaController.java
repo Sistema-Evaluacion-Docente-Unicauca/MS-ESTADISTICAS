@@ -6,7 +6,10 @@ import co.edu.unicauca.estadistica.api.service.EstadisticaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
+@Tag(name = "Estadísticas")
 @RestController
 @RequestMapping("/api/estadisticas")
 @RequiredArgsConstructor
@@ -21,6 +24,10 @@ public class EstadisticaController {
      * @param idPeriodo ID del periodo académico (opcional, por defecto se usa el activo)
      * @return ApiResponse con la estructura ComparacionActividadDTO
      */
+    @Operation(
+        summary = "Comparación de Evaluaciones por Actividad",
+        description = "Agrupa actividades evaluadas por fuente, tipo de actividad y departamento para un docente."
+    )
     @GetMapping("/comparacion-fuente")
     public ResponseEntity<ApiResponse<ComparacionActividadDTO>> obtenerComparacion(
         @RequestParam("idEvaluado") Integer idEvaluado,
