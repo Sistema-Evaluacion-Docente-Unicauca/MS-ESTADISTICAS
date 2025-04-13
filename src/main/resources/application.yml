@@ -1,0 +1,23 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: ms-estadisticas
+  datasource:
+    url: jdbc:noop
+    driver-class-name: org.h2.Driver
+  autoconfigure:
+    exclude: 
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT}
+    'co.edu.unicauca.estadistica.api': ${LOG_LEVEL_API}
+  file:
+    name: ${LOG_FILE_NAME}
+    max-size: ${LOG_FILE_MAX_SIZE}
+    max-history: ${LOG_FILE_MAX_HISTORY}
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} %-5level %logger{36} - %msg%n"
