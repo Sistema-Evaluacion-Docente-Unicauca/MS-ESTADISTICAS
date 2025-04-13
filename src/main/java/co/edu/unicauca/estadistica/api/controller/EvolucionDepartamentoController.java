@@ -28,15 +28,32 @@ public class EvolucionDepartamentoController {
     @Operation(summary = "Evolución de promedio por departamento", description = "Retorna la evolución del promedio de consolidados agrupado por departamento para los periodos indicados.")
     @GetMapping("/evolucion-promedio")
     public ResponseEntity<ApiResponse<List<EvolucionDepartamentoDTO>>> obtenerEvolucion(
-        @RequestParam String periodos,
-        @RequestParam(required = false) Integer idDepartamento) {
+            @RequestParam(required = false) String periodos,
+            @RequestParam(required = false) Integer idDepartamento) {
+    
+        if (periodos == null || periodos.isBlank()) {
+            ApiResponse<List<EvolucionDepartamentoDTO>> error = new ApiResponse<>(400, "Debe especificar al menos un periodo académico.", List.of());
+            return ResponseEntity.badRequest().body(error);
+        }
+    
+        List<Integer> periodosAcademicos;
+        try {
+            periodosAcademicos = Arrays.stream(periodos.split(","))
+                    .map(String::trim)
+                    .filter(p -> !p.isEmpty())
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toList());
+        } catch (NumberFormatException e) {
+            ApiResponse<List<EvolucionDepartamentoDTO>> error = new ApiResponse<>(400, "Los valores de periodo deben ser numéricos válidos.", List.of());
+            return ResponseEntity.badRequest().body(error);
+        }
 
-        List<Integer> periodosAcademicos = Arrays.stream(periodos.split(","))
-                                .map(Integer::parseInt)
-                                .collect(Collectors.toList());
-
+        if (periodosAcademicos.isEmpty()) {
+            ApiResponse<List<EvolucionDepartamentoDTO>> error = new ApiResponse<>(400, "Debe especificar al menos un periodo académico válido.", List.of());
+            return ResponseEntity.badRequest().body(error);
+        }
+    
         ApiResponse<List<EvolucionDepartamentoDTO>> response = evolucionService.obtenerEvolucionPromedios(periodosAcademicos, idDepartamento);
-
         return ResponseEntity.status(response.getCodigo()).body(response);
-    }
+    }    
 }

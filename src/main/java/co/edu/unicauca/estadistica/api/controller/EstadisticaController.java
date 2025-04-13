@@ -30,12 +30,15 @@ public class EstadisticaController {
     )
     @GetMapping("/comparacion-fuente")
     public ResponseEntity<ApiResponse<ComparacionActividadDTO>> obtenerComparacion(
-        @RequestParam("idEvaluado") Integer idEvaluado,
+        @RequestParam(value = "idEvaluado", required = false) Integer idEvaluado,
         @RequestParam(value = "idPeriodo", required = false) Integer idPeriodo,
         @RequestParam(value = "idTipoActividad", required = false) Integer idTipoActividad
     ) {
-        ApiResponse<ComparacionActividadDTO> response =
-            estadisticaService.obtenerComparacionPorDocente(idEvaluado, idPeriodo, idTipoActividad);
+        if (idEvaluado == null) {
+            ApiResponse<ComparacionActividadDTO> errorResponse = new ApiResponse<>(400, "El parámetro idEvaluado es obligatorio.", null);
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+        ApiResponse<ComparacionActividadDTO> response = estadisticaService.obtenerComparacionPorDocente(idEvaluado, idPeriodo, idTipoActividad);
         return ResponseEntity.status(response.getCodigo()).body(response);
     }
 }

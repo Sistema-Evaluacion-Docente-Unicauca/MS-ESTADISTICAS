@@ -36,6 +36,10 @@ public class EstadisticaServiceImpl implements EstadisticaService {
 
     @Override
     public ApiResponse<ComparacionActividadDTO> obtenerComparacionPorDocente(Integer idEvaluado, Integer idPeriodo, Integer idTipoActividad) {
+        
+        if (idEvaluado == null) {
+            return new ApiResponse<>(400, "El parámetro idEvaluado es obligatorio.", null);
+        }
         // 1. Obtener todas las actividades del docente
         List<ActividadDTO> actividades = actividadClient.obtenerActividadesPorEvaluado(idEvaluado, idPeriodo);
         logger.debug("📦 Actividades recibidas para idEvaluado {}: {}", idEvaluado, actividades.size());
