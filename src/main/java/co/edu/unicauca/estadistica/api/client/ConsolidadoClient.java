@@ -25,27 +25,34 @@ public class ConsolidadoClient {
     private String baseUrl;
 
     public List<ConsolidadoDTO> obtenerConsolidados(Integer idPeriodo) {
+        String url = baseUrl + "consolidado";
+        if (idPeriodo != null) {
+            url += "&idPeriodo=" + idPeriodo;
+        }
+        PageResponse<ConsolidadoDTO> resultado = ejecutarConsulta(url, new ParameterizedTypeReference<>() {});
+        return resultado != null ? resultado.getContent() : List.of();
+    }
+
+    public List<ConsolidadoDTO> obtenerTodosConsolidados() {
+        String url = baseUrl + "consolidado/obtener-todos";
+        List<ConsolidadoDTO> resultado = ejecutarConsulta(url, new ParameterizedTypeReference<>() {});
+        return resultado != null ? resultado : List.of();
+    }
+
+    private <T> T ejecutarConsulta(String url, ParameterizedTypeReference<ApiResponse<T>> typeReference) {
         try {
-            String url = baseUrl + "consolidado";
-            if (idPeriodo != null) {
-                url += "&idPeriodo=" + idPeriodo;
-            }
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Void> request = new HttpEntity<>(headers);
-
-            ResponseEntity<ApiResponse<PageResponse<ConsolidadoDTO>>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    request,
-                    new ParameterizedTypeReference<>() {}
-            );
-
-            return response.getBody() != null ? response.getBody().getData().getContent() : List.of();
-
+    
+            ResponseEntity<ApiResponse<T>> response = restTemplate.exchange(url, HttpMethod.GET, request, typeReference);
+    
+            if (response.getBody() != null) {
+                return response.getBody().getData();
+            }
         } catch (Exception e) {
-            logger.error("❌ Error al consultar consolidados: {}", e.getMessage(), e);
-            return List.of();
+            logger.error("❌ Error en llamada a la URL {}: {}", url, e.getMessage(), e);
         }
+        return null;
     }
 }

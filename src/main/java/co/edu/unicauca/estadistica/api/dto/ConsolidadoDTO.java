@@ -6,4 +6,7 @@ import lombok.Data;
 public class ConsolidadoDTO {
     private String departamento;
     private Double calificacion;
+    private String periodoAcademico;
+    private Integer idPeriodoAcademico;
+    private Integer idDepartamento;
 }
