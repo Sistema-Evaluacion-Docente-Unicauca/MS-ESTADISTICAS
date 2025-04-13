@@ -21,7 +21,7 @@ public class EstadisticaController {
      * @param idPeriodo ID del periodo académico (opcional, por defecto se usa el activo)
      * @return ApiResponse con la estructura ComparacionActividadDTO
      */
-    @GetMapping("/fuente-docente")
+    @GetMapping("/comparacion-fuente")
     public ResponseEntity<ApiResponse<ComparacionActividadDTO>> obtenerComparacion(
         @RequestParam("idEvaluado") Integer idEvaluado,
         @RequestParam(value = "idPeriodo", required = false) Integer idPeriodo,
