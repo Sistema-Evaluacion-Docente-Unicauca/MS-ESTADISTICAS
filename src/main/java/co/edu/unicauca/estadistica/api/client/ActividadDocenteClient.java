@@ -22,7 +22,7 @@ public class ActividadDocenteClient {
     private String baseUrl;
 
     public List<ActividadDTO> obtenerActividadesPorEvaluado(Integer idEvaluado, Integer idPeriodo) {
-        String url = baseUrl + "actividades/buscarActividadesPorEvaluado?idEvaluado=" + idEvaluado;
+        String url = baseUrl + "actividades/buscarActividadesPorEvaluado?idEvaluado=" + idEvaluado + "&page=0&size=1000";
         if (idPeriodo != null) {
             url += "&idPeriodo=" + idPeriodo;
         }
