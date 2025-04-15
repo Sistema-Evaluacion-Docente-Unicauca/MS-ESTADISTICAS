@@ -27,7 +27,7 @@ public class ConsolidadoClient {
     public List<ConsolidadoDTO> obtenerConsolidados(Integer idPeriodo) {
         String url = baseUrl + "consolidado";
         if (idPeriodo != null) {
-            url += "&idPeriodo=" + idPeriodo;
+            url += "&idPeriodoAcademico=" + idPeriodo;
         }
         PageResponse<ConsolidadoDTO> resultado = ejecutarConsulta(url, new ParameterizedTypeReference<>() {});
         return resultado != null ? resultado.getContent() : List.of();
