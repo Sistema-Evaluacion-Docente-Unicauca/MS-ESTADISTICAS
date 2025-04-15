@@ -6,6 +6,6 @@ import co.edu.unicauca.estadistica.api.dto.ApiResponse;
 import co.edu.unicauca.estadistica.api.dto.EvolucionDepartamentoDTO;
 
 public interface EvolucionDepartamentoService {
-    ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(List<Integer> periodos, Integer idDepartamento);
+    ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(List<Integer> periodos, String idDepartamento);
 }
 

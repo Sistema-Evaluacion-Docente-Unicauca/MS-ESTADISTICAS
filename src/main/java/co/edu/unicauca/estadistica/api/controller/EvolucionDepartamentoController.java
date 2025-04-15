@@ -29,7 +29,7 @@ public class EvolucionDepartamentoController {
     @GetMapping("/evolucion-promedio")
     public ResponseEntity<ApiResponse<List<EvolucionDepartamentoDTO>>> obtenerEvolucion(
             @RequestParam(required = false) String periodos,
-            @RequestParam(required = false) Integer idDepartamento) {
+            @RequestParam(required = false) String nombreDepartamento) {
     
         if (periodos == null || periodos.isBlank()) {
             ApiResponse<List<EvolucionDepartamentoDTO>> error = new ApiResponse<>(400, "Debe especificar al menos un periodo académico.", List.of());
@@ -53,7 +53,7 @@ public class EvolucionDepartamentoController {
             return ResponseEntity.badRequest().body(error);
         }
     
-        ApiResponse<List<EvolucionDepartamentoDTO>> response = evolucionService.obtenerEvolucionPromedios(periodosAcademicos, idDepartamento);
+        ApiResponse<List<EvolucionDepartamentoDTO>> response = evolucionService.obtenerEvolucionPromedios(periodosAcademicos, nombreDepartamento);
         return ResponseEntity.status(response.getCodigo()).body(response);
-    }    
+    }
 }
