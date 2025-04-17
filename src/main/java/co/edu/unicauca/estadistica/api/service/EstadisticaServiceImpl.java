@@ -1,5 +1,6 @@
 package co.edu.unicauca.estadistica.api.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,8 +36,9 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     private static final Logger logger = LoggerFactory.getLogger(EstadisticaServiceImpl.class);
 
     @Override
-    public ApiResponse<ComparacionActividadDTO> obtenerComparacionPorDocente(Integer idEvaluado, Integer idPeriodo, Integer idTipoActividad) {
-        
+    public ApiResponse<ComparacionActividadDTO> obtenerComparacionPorDocente(Integer idEvaluado, Integer idPeriodo,
+            List<Integer> idTipoActividad) {
+
         if (idEvaluado == null) {
             return new ApiResponse<>(400, "El parámetro idEvaluado es obligatorio.", null);
         }
@@ -55,35 +57,49 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         }
 
         // 3. Si se recibe idTipoActividad, obtener su nombre y filtrar actividades
-        if (idTipoActividad != null) {
-            TipoActividadDTO tipo = tipoActividadClient.obtenerPorId(idTipoActividad);
-            if (tipo == null) {
-                return new ApiResponse<>(404, "Tipo de actividad no encontrado", null);
+        if (idTipoActividad != null && !idTipoActividad.isEmpty()) {
+
+            List<Integer> tiposValidos = new ArrayList<>();
+            for (Integer tipoId : idTipoActividad) {
+                TipoActividadDTO tipo = tipoActividadClient.obtenerPorId(tipoId);
+                if (tipo == null) {
+                    logger.warn("⚠️ Tipo de actividad con ID {} no encontrado", tipoId);
+                    continue;
+                }
+                tiposValidos.add(tipoId);
             }
 
-            final String nombreTipoActividad = tipo.getNombre(); // ahora es efectivamente final
+            if (tiposValidos.isEmpty()) {
+                return new ApiResponse<>(404, "Ningún tipo de actividad válido encontrado", null);
+            }
 
             actividades = actividades.stream()
-                .filter(a -> a.getTipoActividad() != null && nombreTipoActividad.equalsIgnoreCase(a.getTipoActividad().getNombre())).toList();
+                    .filter(a -> a.getTipoActividad() != null &&
+                            tiposValidos.contains(a.getTipoActividad().getOidTipoActividad()))
+                    .toList();
 
-            logger.debug("🔍 Actividades luego de filtrar por tipo '{}': {}", nombreTipoActividad, actividades.size());
+            logger.debug("🔍 Actividades luego de filtrar por tipos {}: {}", tiposValidos, actividades.size());
         }
 
         // 4. Construir y agrupar actividades evaluadas
         List<ActividadEvaluadaWrapper> wrappers = actividades.stream()
                 .map(act -> {
-                    String departamento = docente.getUsuarioDetalle() != null ? docente.getUsuarioDetalle().getDepartamento() : null;
+                    String departamento = docente.getUsuarioDetalle() != null
+                            ? docente.getUsuarioDetalle().getDepartamento()
+                            : null;
 
                     String tipoActividad = act.getTipoActividad() != null ? act.getTipoActividad().getNombre() : null;
 
                     if (departamento == null || tipoActividad == null) {
-                        logger.warn("❗ Actividad omitida (departamento o tipoActividad nulo). ID: {}", act.getOidActividad());
+                        logger.warn("❗ Actividad omitida (departamento o tipoActividad nulo). ID: {}",
+                                act.getOidActividad());
                         return null;
                     }
 
                     String nombreActividad = act.getAtributos() != null
-                        ? act.getAtributos().stream().filter(attr -> "ACTIVIDAD".equals(attr.getCodigoAtributo()))
-                            .map(AtributoDTO::getValor).findFirst().orElse(act.getNombreActividad()) : act.getNombreActividad();
+                            ? act.getAtributos().stream().filter(attr -> "ACTIVIDAD".equals(attr.getCodigoAtributo()))
+                                    .map(AtributoDTO::getValor).findFirst().orElse(act.getNombreActividad())
+                            : act.getNombreActividad();
 
                     if (nombreActividad == null) {
                         logger.warn("❌ Actividad sin nombre. ID: {}", act.getOidActividad());
@@ -91,14 +107,15 @@ public class EstadisticaServiceImpl implements EstadisticaService {
                     }
 
                     Double fuente1 = act.getFuentes().stream()
-                        .filter(f -> "1".equals(f.getTipoFuente()) && f.getCalificacion() != null)
-                        .map(FuenteDTO::getCalificacion).findFirst().orElse(null);
+                            .filter(f -> "1".equals(f.getTipoFuente()) && f.getCalificacion() != null)
+                            .map(FuenteDTO::getCalificacion).findFirst().orElse(null);
 
                     Double fuente2 = act.getFuentes().stream()
-                        .filter(f -> "2".equals(f.getTipoFuente()) && f.getCalificacion() != null)
-                        .map(FuenteDTO::getCalificacion).findFirst().orElse(null);
+                            .filter(f -> "2".equals(f.getTipoFuente()) && f.getCalificacion() != null)
+                            .map(FuenteDTO::getCalificacion).findFirst().orElse(null);
 
-                    return new ActividadEvaluadaWrapper(departamento, tipoActividad, new ActividadEvaluadaDTO(nombreActividad, fuente1, fuente2));
+                    return new ActividadEvaluadaWrapper(departamento, tipoActividad,
+                            new ActividadEvaluadaDTO(nombreActividad, fuente1, fuente2));
                 })
                 .filter(Objects::nonNull)
                 .toList();
@@ -106,13 +123,16 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         // 5. Agrupamiento por departamento → tipoActividad
         Map<String, Map<String, List<ActividadEvaluadaDTO>>> agrupado = wrappers.stream()
                 .collect(Collectors.groupingBy(ActividadEvaluadaWrapper::departamento,
-                    Collectors.groupingBy(ActividadEvaluadaWrapper::tipoActividad,
-                        Collectors.mapping(ActividadEvaluadaWrapper::actividad, Collectors.toList()))));
+                        Collectors.groupingBy(ActividadEvaluadaWrapper::tipoActividad,
+                                Collectors.mapping(ActividadEvaluadaWrapper::actividad, Collectors.toList()))));
 
         // 6. Convertir a DTO de respuesta
         List<EvaluacionDepartamentoDTO> evaluaciones = agrupado.entrySet().stream()
                 .map(entry -> new EvaluacionDepartamentoDTO(entry.getKey(),
-                    entry.getValue().entrySet().stream().map(tipoEntry -> new TipoActividadEvaluadaDTO(tipoEntry.getKey(), tipoEntry.getValue())).toList()))
+                        entry.getValue().entrySet().stream()
+                                .map(tipoEntry -> new TipoActividadEvaluadaDTO(tipoEntry.getKey(),
+                                        tipoEntry.getValue()))
+                                .toList()))
                 .toList();
 
         ComparacionActividadDTO comparacion = new ComparacionActividadDTO(docente, evaluaciones);

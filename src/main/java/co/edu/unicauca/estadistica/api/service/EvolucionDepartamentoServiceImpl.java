@@ -22,31 +22,28 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
     private static final Logger logger = LoggerFactory.getLogger(EvolucionDepartamentoServiceImpl.class);
 
     @Override
-    public ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(List<Integer> periodos, String nombreDepartamento) {
+    public ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(List<Integer> periodos, List<String> nombresDepartamentos) {
+
         List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerTodosConsolidados();
-    
+
         if (consolidados.isEmpty()) {
             logger.warn("⚠️ No se encontraron consolidados.");
             return new ApiResponse<>(200, "No se encontraron consolidados.", List.of());
         }
-    
-        // Filtrar consolidados por periodos, nombre de departamento (si aplica), y que tengan datos válidos
+
+        // Filtrar consolidados por periodos, departamentos (si aplica), y datos válidos
         List<ConsolidadoDTO> filtrados = consolidados.stream()
-            .filter(c -> c.getDepartamento() != null && c.getCalificacion() != null && c.getPeriodoAcademico() != null)
-            .filter(c -> periodos.contains(c.getIdPeriodoAcademico()))
-            .filter(c -> nombreDepartamento == null || c.getDepartamento().equalsIgnoreCase(nombreDepartamento))
-            .toList();
-    
-        // Agrupar por departamento y dentro de eso por periodo, calculando promedio
+                .filter(c -> c.getDepartamento() != null && c.getCalificacion() != null && c.getPeriodoAcademico() != null)
+                .filter(c -> periodos.contains(c.getIdPeriodoAcademico()))
+                .filter(c -> nombresDepartamentos == null || nombresDepartamentos.isEmpty() || nombresDepartamentos.stream().anyMatch(nombre -> nombre.equalsIgnoreCase(c.getDepartamento())))
+                .toList();
+
+        // Agrupar por departamento y luego por periodo, calculando promedio
         Map<String, Map<String, Double>> agrupado = filtrados.stream()
-            .collect(Collectors.groupingBy(
-                ConsolidadoDTO::getDepartamento,
-                Collectors.groupingBy(
-                    ConsolidadoDTO::getPeriodoAcademico,
-                    Collectors.averagingDouble(ConsolidadoDTO::getCalificacion)
-                )
+            .collect(Collectors.groupingBy(ConsolidadoDTO::getDepartamento,
+                Collectors.groupingBy(ConsolidadoDTO::getPeriodoAcademico, Collectors.averagingDouble(ConsolidadoDTO::getCalificacion))
             ));
-    
+
         // Construcción del DTO final
         List<EvolucionDepartamentoDTO> resultado = agrupado.entrySet().stream()
             .map(entry -> new EvolucionDepartamentoDTO(
@@ -54,11 +51,10 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
                 entry.getValue().entrySet().stream()
                     .map(e -> new EvolucionPeriodoDTO(e.getKey(), Math.round(e.getValue() * 100.0) / 100.0))
                     .sorted(Comparator.comparing(EvolucionPeriodoDTO::getPeriodo))
-                    .toList()
-            ))
+                    .toList()))
             .sorted(Comparator.comparing(EvolucionDepartamentoDTO::getDepartamento))
             .toList();
-    
+
         return new ApiResponse<>(200, "Evolución generada correctamente", resultado);
-    }    
+    }
 }
