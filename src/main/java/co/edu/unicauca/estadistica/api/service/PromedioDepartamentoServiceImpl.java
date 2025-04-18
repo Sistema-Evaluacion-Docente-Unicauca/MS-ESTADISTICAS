@@ -28,10 +28,19 @@ public class PromedioDepartamentoServiceImpl implements PromedioDepartamentoServ
         List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerConsolidados(idPeriodo);
 
         if (consolidados.isEmpty()) {
-            logger.warn("⚠️ No se encontraron consolidados.");
-            return new ApiResponse<>(200, "No se encontraron consolidados.", new PromedioDepartamentalResponse(List.of()));
+            logger.warn("⚠️ No se encontraron consolidados para el periodo {}", idPeriodo);
+            return respuestaSinResultados();
         }
 
+        List<PromedioDepartamentoDTO> resultado = calcularPromedios(consolidados);
+
+        return new ApiResponse<>(200, "Promedios generados correctamente", new PromedioDepartamentalResponse(resultado));
+    }
+
+    /**
+     * Calcula los promedios por departamento agrupando los consolidados.
+     */
+    private List<PromedioDepartamentoDTO> calcularPromedios(List<ConsolidadoDTO> consolidados) {
         Map<String, Double> promedios = consolidados.stream()
             .filter(c -> c.getDepartamento() != null && c.getCalificacion() != null)
             .collect(Collectors.groupingBy(
@@ -39,11 +48,19 @@ public class PromedioDepartamentoServiceImpl implements PromedioDepartamentoServ
                 Collectors.averagingDouble(ConsolidadoDTO::getCalificacion)
             ));
 
-        List<PromedioDepartamentoDTO> resultado = promedios.entrySet().stream()
-            .map(e -> new PromedioDepartamentoDTO(e.getKey(), Math.round(e.getValue() * 100.0) / 100.0))
+        return promedios.entrySet().stream()
+            .map(entry -> new PromedioDepartamentoDTO(
+                entry.getKey(),
+                Math.round(entry.getValue() * 100.0) / 100.0
+            ))
             .sorted(Comparator.comparing(PromedioDepartamentoDTO::getDepartamento))
             .toList();
+    }
 
-        return new ApiResponse<>(200, "Promedios generados correctamente", new PromedioDepartamentalResponse(resultado));
+    /**
+     * Construye una respuesta vacía estandarizada.
+     */
+    private ApiResponse<PromedioDepartamentalResponse> respuestaSinResultados() {
+        return new ApiResponse<>(200, "No se encontraron consolidados.", new PromedioDepartamentalResponse(List.of()));
     }
 }
