@@ -3,12 +3,14 @@ package co.edu.unicauca.estadistica.api.controller;
 import co.edu.unicauca.estadistica.api.dto.ApiResponse;
 import co.edu.unicauca.estadistica.api.dto.ComparacionActividadDTO;
 import co.edu.unicauca.estadistica.api.dto.EvolucionDepartamentoDTO;
+import co.edu.unicauca.estadistica.api.dto.PeriodoDocenteDTO;
 import co.edu.unicauca.estadistica.api.dto.PeriodoRankingDTO;
 import co.edu.unicauca.estadistica.api.dto.PromedioDepartamentalResponse;
 import co.edu.unicauca.estadistica.api.service.EstadisticaService;
 import co.edu.unicauca.estadistica.api.service.EvolucionDepartamentoService;
 import co.edu.unicauca.estadistica.api.service.PromedioDepartamentoService;
 import co.edu.unicauca.estadistica.api.service.PromedioPreguntaService;
+import co.edu.unicauca.estadistica.api.service.RankingDocenteService;
 import lombok.RequiredArgsConstructor;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +29,7 @@ public class EstadisticaController {
     private final PromedioPreguntaService promedioPreguntaService;
     private final EvolucionDepartamentoService evolucionService;
     private final PromedioDepartamentoService promedioDepartamentoService;
+    private final RankingDocenteService rankingDocenteService;
 
     @Operation(
         summary = "Comparación de Evaluaciones por Actividad",
@@ -99,5 +102,21 @@ public class EstadisticaController {
         return ResponseEntity.ok(
             promedioPreguntaService.obtenerRankingPreguntas(periodos, departamentos, tiposActividad)
         );
+    }
+
+    @Operation(
+        summary = "Ranking de Docentes por Calificación",
+        description = "Retorna un listado agrupado por periodo, departamento y tipo de actividad, ordenado por calificación descendente."
+    )
+    @GetMapping("/ranking-docentes")
+    public ResponseEntity<ApiResponse<List<PeriodoDocenteDTO>>> obtenerRankingDocentes(
+            @Parameter(description = "Lista de IDs de periodo académico separados por comas. Si no se especifica, se usa el activo.")
+            @RequestParam(required = false) String periodos,
+
+            @Parameter(description = "Lista de nombres de departamentos separados por comas. Opcional.")
+            @RequestParam(required = false) String departamentos) {
+
+        ApiResponse<List<PeriodoDocenteDTO>> response = rankingDocenteService.obtenerRankingDocentes(periodos, departamentos);
+        return ResponseEntity.status(response.getCodigo()).body(response);
     }
 }
