@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Tag(name = "Estadísticas", description = "Operaciones para análisis de evaluación docente por fuente, departamento, actividad y pregunta.")
 @RestController
@@ -39,15 +40,16 @@ public class EstadisticaController {
     public ResponseEntity<ApiResponse<ComparacionActividadDTO>> obtenerComparacion(
             @Parameter(description = "ID del docente evaluado", required = true)
             @RequestParam(value = "idEvaluado", required = false) Integer idEvaluado,
-    
             @Parameter(description = "ID del periodo académico. Opcional. Si no se envía, se usa el periodo activo.")
             @RequestParam(value = "idPeriodo", required = false) Integer idPeriodo,
-    
             @Parameter(description = "Lista de IDs de tipo de actividad separados por comas. Opcional.")
-            @RequestParam(value = "idTipoActividad", required = false) String idTipoActividad) {
-    
-        ApiResponse<ComparacionActividadDTO> response = estadisticaService.obtenerComparacionPorDocente(idEvaluado, idPeriodo, idTipoActividad);
-    
+            @RequestParam(value = "idTipoActividad", required = false) String idTipoActividad,
+            HttpServletRequest request) {
+
+        String token = request.getHeader("Authorization");
+
+        ApiResponse<ComparacionActividadDTO> response = estadisticaService.obtenerComparacionPorDocente(idEvaluado, idPeriodo, idTipoActividad, token);
+
         return ResponseEntity.status(response.getCodigo()).body(response);
     }
     
@@ -62,11 +64,13 @@ public class EstadisticaController {
             @RequestParam(required = false) String periodos,
 
             @Parameter(description = "Lista de nombres de departamentos separados por comas. Opcional.")
-            @RequestParam(required = false) String nombresDepartamentos) {
-
-        ApiResponse<List<EvolucionDepartamentoDTO>> response =
-            evolucionService.obtenerEvolucionPromedios(periodos, nombresDepartamentos);
-
+            @RequestParam(required = false) String nombresDepartamentos,
+            HttpServletRequest request) {
+    
+        String token = request.getHeader("Authorization");
+    
+        ApiResponse<List<EvolucionDepartamentoDTO>> response = evolucionService.obtenerEvolucionPromedios(periodos, nombresDepartamentos, token);
+    
         return ResponseEntity.status(response.getCodigo()).body(response);
     }
 
@@ -77,10 +81,13 @@ public class EstadisticaController {
     @GetMapping("/promedio-departamento")
     public ResponseEntity<ApiResponse<PromedioDepartamentalResponse>> obtenerPromedios(
             @Parameter(description = "ID del periodo académico. Opcional, por defecto toma el periodo activo.")
-            @RequestParam(value = "idPeriodo", required = false) Integer idPeriodo) {
-
-        ApiResponse<PromedioDepartamentalResponse> response = promedioDepartamentoService.obtenerPromediosPorDepartamento(idPeriodo);
-
+            @RequestParam(value = "idPeriodo", required = false) Integer idPeriodo,
+            HttpServletRequest request) {
+    
+        String token = request.getHeader("Authorization");
+    
+        ApiResponse<PromedioDepartamentalResponse> response =promedioDepartamentoService.obtenerPromediosPorDepartamento(idPeriodo, token);
+    
         return ResponseEntity.status(response.getCodigo()).body(response);
     }
 
@@ -90,18 +97,18 @@ public class EstadisticaController {
     )
     @GetMapping("/ranking-preguntas")
     public ResponseEntity<ApiResponse<List<PeriodoRankingDTO>>> obtenerRankingPreguntas(
-            @Parameter(description = "Lista de IDs de periodo académico separados por comas. Si no se envía, se usa el activo.")
-            @RequestParam(required = false) String periodos,
+        @Parameter(description = "Lista de IDs de periodo académico separados por comas. Si no se envía, se usa el activo.")
 
+            @RequestParam(required = false) String periodos,
             @Parameter(description = "Lista de nombres de departamentos separados por comas. Opcional.")
             @RequestParam(required = false) String departamentos,
-
             @Parameter(description = "Lista de IDs de tipo de actividad separados por comas. Opcional.")
-            @RequestParam(required = false) String tiposActividad) {
-
-        return ResponseEntity.ok(
-            promedioPreguntaService.obtenerRankingPreguntas(periodos, departamentos, tiposActividad)
-        );
+            @RequestParam(required = false) String tiposActividad,
+            HttpServletRequest request) {
+    
+        String token = request.getHeader("Authorization");
+    
+        return ResponseEntity.ok(promedioPreguntaService.obtenerRankingPreguntas(periodos, departamentos, tiposActividad, token));
     }
 
     @Operation(
@@ -112,11 +119,14 @@ public class EstadisticaController {
     public ResponseEntity<ApiResponse<List<PeriodoDocenteDTO>>> obtenerRankingDocentes(
             @Parameter(description = "Lista de IDs de periodo académico separados por comas. Si no se especifica, se usa el activo.")
             @RequestParam(required = false) String periodos,
-
             @Parameter(description = "Lista de nombres de departamentos separados por comas. Opcional.")
-            @RequestParam(required = false) String departamentos) {
-
-        ApiResponse<List<PeriodoDocenteDTO>> response = rankingDocenteService.obtenerRankingDocentes(periodos, departamentos);
+            @RequestParam(required = false) String departamentos,
+            HttpServletRequest request) {
+    
+        String token = request.getHeader("Authorization");
+    
+        ApiResponse<List<PeriodoDocenteDTO>> response = rankingDocenteService.obtenerRankingDocentes(periodos, departamentos, token);
+    
         return ResponseEntity.status(response.getCodigo()).body(response);
     }
 }

@@ -2,6 +2,8 @@ package co.edu.unicauca.estadistica.api.client;
 
 import co.edu.unicauca.estadistica.api.dto.ApiResponse;
 import co.edu.unicauca.estadistica.api.dto.PageResponse;
+import co.edu.unicauca.estadistica.api.util.AuthHeaderUtil;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -14,36 +16,22 @@ public abstract class BaseRestClient {
 
     protected abstract RestTemplate getRestTemplate();
 
-    protected <T> T get(String url, ParameterizedTypeReference<ApiResponse<T>> responseType) {
+    protected <T> T get(String url, ParameterizedTypeReference<ApiResponse<T>> responseType, String token) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> request = new HttpEntity<>(headers);
-
-            ResponseEntity<ApiResponse<T>> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, request, responseType
-            );
-
+            HttpEntity<Void> request = AuthHeaderUtil.crearRequest(token);
+            ResponseEntity<ApiResponse<T>> response = getRestTemplate().exchange(url, HttpMethod.GET, request, responseType);
             return response.getBody() != null ? response.getBody().getData() : null;
-
         } catch (Exception e) {
             logger.error("❌ Error al consumir '{}': {}", url, e.getMessage(), e);
             return null;
         }
     }
 
-    protected <T> PageResponse<T> getPage(String url, ParameterizedTypeReference<ApiResponse<PageResponse<T>>> responseType) {
+    protected <T> PageResponse<T> getPage(String url, ParameterizedTypeReference<ApiResponse<PageResponse<T>>> responseType, String token) {
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> request = new HttpEntity<>(headers);
-
-            ResponseEntity<ApiResponse<PageResponse<T>>> response = getRestTemplate().exchange(
-                url, HttpMethod.GET, request, responseType
-            );
-
+            HttpEntity<Void> request = AuthHeaderUtil.crearRequest(token);
+            ResponseEntity<ApiResponse<PageResponse<T>>> response = getRestTemplate().exchange(url, HttpMethod.GET, request, responseType);
             return response.getBody() != null ? response.getBody().getData() : null;
-
         } catch (Exception e) {
             logger.error("❌ Error al consumir página '{}': {}", url, e.getMessage(), e);
             return null;

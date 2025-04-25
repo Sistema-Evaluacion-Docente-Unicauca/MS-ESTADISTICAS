@@ -24,19 +24,19 @@ public class ConsolidadoClient extends BaseRestClient {
         return restTemplate;
     }
 
-    public List<ConsolidadoDTO> obtenerConsolidados(Integer idPeriodo) {
+    public List<ConsolidadoDTO> obtenerConsolidados(Integer idPeriodo, String token) {
         String url = baseUrl + "consolidado";
         if (idPeriodo != null) {
             url += "?idPeriodoAcademico=" + idPeriodo;
         }
-
-        PageResponse<ConsolidadoDTO> resultado = getPage(url, new ParameterizedTypeReference<>() {});
+    
+        PageResponse<ConsolidadoDTO> resultado = getPage(url, new ParameterizedTypeReference<>() {}, token);
         return resultado != null ? resultado.getContent() : List.of();
     }
 
-    public List<ConsolidadoDTO> obtenerTodosConsolidados() {
+    public List<ConsolidadoDTO> obtenerTodosConsolidados(String token) {
         String url = baseUrl + "consolidado/obtener-todos";
-        List<ConsolidadoDTO> resultado = get(url, new ParameterizedTypeReference<>() {});
+        List<ConsolidadoDTO> resultado = get(url, new ParameterizedTypeReference<>() {}, token);
         return resultado != null ? resultado : List.of();
     }
 }

@@ -5,6 +5,6 @@ import co.edu.unicauca.estadistica.api.dto.ApiResponse;
 import co.edu.unicauca.estadistica.api.dto.PeriodoDocenteDTO;
 
 public interface RankingDocenteService {
-    ApiResponse<List<PeriodoDocenteDTO>> obtenerRankingDocentes(String periodos, String departamentos);
+    ApiResponse<List<PeriodoDocenteDTO>> obtenerRankingDocentes(String periodos, String departamentos, String token);
 }
 

@@ -27,23 +27,22 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
     private static final Logger logger = LoggerFactory.getLogger(EvolucionDepartamentoServiceImpl.class);
 
     @Override
-    public ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(String periodos, String nombresDepartamentos) {
-        List<Integer> periodosFiltrados = obtenerPeriodosValidos(periodos);
+    public ApiResponse<List<EvolucionDepartamentoDTO>> obtenerEvolucionPromedios(String periodos, String nombresDepartamentos, String token) {
+        List<Integer> periodosFiltrados = obtenerPeriodosValidos(periodos, token);
         if (periodosFiltrados == null) {
             return new ApiResponse<>(400, "Debe especificar al menos un período académico válido.", List.of());
         }
 
         List<String> departamentosFiltrados = parsearDepartamentos(nombresDepartamentos);
-        return construirEvolucion(periodosFiltrados, departamentosFiltrados);
+        return construirEvolucion(periodosFiltrados, departamentosFiltrados, token);
     }
 
     /**
-     * Procesa los valores de entrada para extraer una lista de IDs de periodo válidos,
-     * o devuelve el activo si no se proporcionan explícitamente.
+     * Procesa los valores de entrada para extraer una lista de IDs de periodo válidos, o devuelve el activo si no se proporcionan explícitamente.
      */
-    private List<Integer> obtenerPeriodosValidos(String periodos) {
+    private List<Integer> obtenerPeriodosValidos(String periodos, String token) {
         if (periodos == null || periodos.isBlank()) {
-            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo();
+            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo(token);
             if (activo == null) {
                 logger.warn("❌ No se pudo determinar el período académico activo");
                 return null;
@@ -81,8 +80,8 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
     /**
      * Construye el DTO final de evolución, agrupando por departamento y periodo con promedio.
      */
-    private ApiResponse<List<EvolucionDepartamentoDTO>> construirEvolucion(List<Integer> periodos, List<String> nombresDepartamentos) {
-        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerTodosConsolidados();
+    private ApiResponse<List<EvolucionDepartamentoDTO>> construirEvolucion(List<Integer> periodos, List<String> nombresDepartamentos, String token) {
+        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerTodosConsolidados(token);
 
         if (consolidados.isEmpty()) {
             logger.warn("⚠️ No se encontraron consolidados.");
@@ -113,13 +112,13 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
      */
     private Map<String, Map<String, Double>> agruparPromedios(List<ConsolidadoDTO> filtrados) {
         return filtrados.stream()
-                .collect(Collectors.groupingBy(
-                        ConsolidadoDTO::getDepartamento,
-                        Collectors.groupingBy(
-                                ConsolidadoDTO::getPeriodoAcademico,
-                                Collectors.averagingDouble(ConsolidadoDTO::getCalificacion)
-                        )
-                ));
+            .collect(Collectors.groupingBy(
+                ConsolidadoDTO::getDepartamento,
+                Collectors.groupingBy(
+                        ConsolidadoDTO::getPeriodoAcademico,
+                        Collectors.averagingDouble(ConsolidadoDTO::getCalificacion)
+                )
+            ));
     }
 
     /**
@@ -127,14 +126,14 @@ public class EvolucionDepartamentoServiceImpl implements EvolucionDepartamentoSe
      */
     private List<EvolucionDepartamentoDTO> construirRespuestaDTO(Map<String, Map<String, Double>> agrupado) {
         return agrupado.entrySet().stream()
-                .map(entry -> new EvolucionDepartamentoDTO(
-                        entry.getKey(),
-                        entry.getValue().entrySet().stream()
-                                .map(e -> new EvolucionPeriodoDTO(e.getKey(), Math.round(e.getValue() * 100.0) / 100.0))
-                                .sorted(Comparator.comparing(EvolucionPeriodoDTO::getPeriodo))
-                                .toList()
-                ))
-                .sorted(Comparator.comparing(EvolucionDepartamentoDTO::getDepartamento))
-                .toList();
+            .map(entry -> new EvolucionDepartamentoDTO(
+                entry.getKey(),
+                entry.getValue().entrySet().stream()
+                    .map(e -> new EvolucionPeriodoDTO(e.getKey(), Math.round(e.getValue() * 100.0) / 100.0))
+                    .sorted(Comparator.comparing(EvolucionPeriodoDTO::getPeriodo))
+                    .toList()
+            ))
+            .sorted(Comparator.comparing(EvolucionDepartamentoDTO::getDepartamento))
+            .toList();
     }
 }

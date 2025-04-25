@@ -33,16 +33,15 @@ public class PromedioPreguntaServiceImpl implements PromedioPreguntaService {
     private static final Logger logger = LoggerFactory.getLogger(PromedioDepartamentoServiceImpl.class);
 
     @Override
-    public ApiResponse<List<PeriodoRankingDTO>> obtenerRankingPreguntas(
-            String periodos, String departamentos, String tiposActividad) {
+    public ApiResponse<List<PeriodoRankingDTO>> obtenerRankingPreguntas(String periodos, String departamentos, String tiposActividad, String token) {
 
         // Obtener lista completa desde sed-docente
-        List<PeriodoEvaluacionDTO> periodosEvaluacion = consolidadoClient.obtenerEvaluacionesEstructuradas();
+        List<PeriodoEvaluacionDTO> periodosEvaluacion = consolidadoClient.obtenerEvaluacionesEstructuradas(token);
 
         // 🧠 Procesar periodos
         List<Integer> periodosFiltrados;
         if (periodos == null || periodos.isBlank()) {
-            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo();
+            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo(token);
             if (activo == null) {
                 return new ApiResponse<>(404, "No se pudo obtener el período académico activo", List.of());
             }

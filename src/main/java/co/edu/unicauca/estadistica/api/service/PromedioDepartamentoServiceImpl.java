@@ -24,8 +24,8 @@ public class PromedioDepartamentoServiceImpl implements PromedioDepartamentoServ
     private static final Logger logger = LoggerFactory.getLogger(PromedioDepartamentoServiceImpl.class);
 
     @Override
-    public ApiResponse<PromedioDepartamentalResponse> obtenerPromediosPorDepartamento(Integer idPeriodo) {
-        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerConsolidados(idPeriodo);
+    public ApiResponse<PromedioDepartamentalResponse> obtenerPromediosPorDepartamento(Integer idPeriodo, String token) {
+        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerConsolidados(idPeriodo, token);
 
         if (consolidados.isEmpty()) {
             logger.warn("⚠️ No se encontraron consolidados para el periodo {}", idPeriodo);

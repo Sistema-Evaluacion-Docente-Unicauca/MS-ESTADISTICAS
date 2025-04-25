@@ -24,13 +24,13 @@ public class ActividadDocenteClient extends BaseRestClient {
         return restTemplate;
     }
 
-    public List<ActividadDTO> obtenerActividadesPorEvaluado(Integer idEvaluado, Integer idPeriodo) {
+    public List<ActividadDTO> obtenerActividadesPorEvaluado(Integer idEvaluado, Integer idPeriodo, String token) {
         String url = baseUrl + "actividades/buscarActividadesPorEvaluado?idEvaluado=" + idEvaluado + "&page=0&size=1000";
         if (idPeriodo != null) {
             url += "&idPeriodo=" + idPeriodo;
         }
-
-        PageResponse<ActividadDTO> response = getPage(url, new ParameterizedTypeReference<>() {});
+    
+        PageResponse<ActividadDTO> response = getPage(url, new ParameterizedTypeReference<>() {}, token);
         return response != null ? response.getContent() : List.of();
     }
 }

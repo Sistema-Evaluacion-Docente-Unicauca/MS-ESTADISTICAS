@@ -21,8 +21,8 @@ public class UsuarioDocenteClient extends BaseRestClient {
         return restTemplate;
     }
 
-    public UsuarioDTO obtenerUsuarioPorId(Integer idUsuario) {
+    public UsuarioDTO obtenerUsuarioPorId(Integer idUsuario, String token) {
         String url = baseUrl + "usuarios/" + idUsuario;
-        return get(url, new ParameterizedTypeReference<>() {});
-    }
+        return get(url, new ParameterizedTypeReference<>() {}, token);
+    }    
 }

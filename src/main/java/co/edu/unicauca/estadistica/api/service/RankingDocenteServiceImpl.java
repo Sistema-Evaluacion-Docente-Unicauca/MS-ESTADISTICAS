@@ -19,26 +19,30 @@ public class RankingDocenteServiceImpl implements RankingDocenteService {
     private final PeriodoAcademicoClient periodoAcademicoClient;
 
     private static final Logger logger = LoggerFactory.getLogger(RankingDocenteServiceImpl.class);
-
     @Override
-    public ApiResponse<List<PeriodoDocenteDTO>> obtenerRankingDocentes(String periodos, String departamentos) {
-        List<Integer> periodosFiltrados = obtenerPeriodos(periodos);
+    public ApiResponse<List<PeriodoDocenteDTO>> obtenerRankingDocentes(String periodos, String departamentos, String token) {
+        List<Integer> periodosFiltrados = obtenerPeriodos(periodos, token);
         if (periodosFiltrados == null || periodosFiltrados.isEmpty()) {
             return new ApiResponse<>(400, "Debe especificar al menos un periodo académico válido.", List.of());
         }
-
+    
         List<String> departamentosFiltrados = parsearComas(departamentos);
-
-        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerTodosConsolidados();
+    
+        List<ConsolidadoDTO> consolidados = consolidadoClient.obtenerTodosConsolidados(token);
+    
+        if (consolidados == null || consolidados.isEmpty()) {
+            return new ApiResponse<>(500, "No se pudo obtener la información de consolidados o no se encontraron datos.", null);
+        }
+    
         List<ConsolidadoDTO> filtrados = aplicarFiltros(consolidados, periodosFiltrados, departamentosFiltrados);
-
         List<PeriodoDocenteDTO> resultado = construirRanking(filtrados);
+    
         return new ApiResponse<>(200, "Ranking generado correctamente", resultado);
-    }
+    }    
 
-    private List<Integer> obtenerPeriodos(String periodos) {
+    private List<Integer> obtenerPeriodos(String periodos, String token) {
         if (periodos == null || periodos.isBlank()) {
-            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo();
+            PeriodoAcademicoDTO activo = periodoAcademicoClient.obtenerPeriodoActivo(token);
             if (activo != null) {
                 logger.info("\uD83D\uDFE2 Usando periodo académico activo: {} (ID={})", activo.getIdPeriodo(), activo.getOidPeriodoAcademico());
                 return List.of(activo.getOidPeriodoAcademico());

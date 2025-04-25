@@ -2,6 +2,7 @@ package co.edu.unicauca.estadistica.api.client;
 
 import co.edu.unicauca.estadistica.api.dto.ApiResponse;
 import co.edu.unicauca.estadistica.api.dto.PeriodoEvaluacionDTO;
+import co.edu.unicauca.estadistica.api.util.AuthHeaderUtil;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +26,17 @@ public class EvaluacionDocenteClient {
     @Value("${SED_DOCENTE_API_URL}")
     private String baseUrl;
 
-    public List<PeriodoEvaluacionDTO> obtenerEvaluacionesEstructuradas() {
+    /**
+     * Obtiene las evaluaciones estructuradas desde el microservicio sedDocente.
+     *
+     * @param token JWT enviado desde el frontend
+     * @return lista de PeriodoEvaluacionDTO
+     */
+    public List<PeriodoEvaluacionDTO> obtenerEvaluacionesEstructuradas(String token) {
         String url = baseUrl + "evaluacion-estudiante/respuesta";
 
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Void> request = new HttpEntity<>(headers);
+            HttpEntity<Void> request = AuthHeaderUtil.crearRequest(token);
 
             ResponseEntity<ApiResponse<List<PeriodoEvaluacionDTO>>> response = restTemplate.exchange(
                 url,

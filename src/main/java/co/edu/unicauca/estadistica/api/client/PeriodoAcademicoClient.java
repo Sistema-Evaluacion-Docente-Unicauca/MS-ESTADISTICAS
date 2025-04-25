@@ -21,8 +21,8 @@ public class PeriodoAcademicoClient extends BaseRestClient {
         return restTemplate;
     }
 
-    public PeriodoAcademicoDTO obtenerPeriodoActivo() {
+    public PeriodoAcademicoDTO obtenerPeriodoActivo(String token) {
         String url = baseUrl + "periodos-academicos/activo";
-        return get(url, new ParameterizedTypeReference<>() {});
+        return get(url, new ParameterizedTypeReference<>() {}, token);
     }
 }

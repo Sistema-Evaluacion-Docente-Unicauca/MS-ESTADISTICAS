@@ -37,7 +37,7 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     private static final Logger logger = LoggerFactory.getLogger(EstadisticaServiceImpl.class);
 
     @Override
-    public ApiResponse<ComparacionActividadDTO> obtenerComparacionPorDocente(Integer idEvaluado, Integer idPeriodo, String idTipoActividad) {
+    public ApiResponse<ComparacionActividadDTO> obtenerComparacionPorDocente(Integer idEvaluado, Integer idPeriodo, String idTipoActividad, String token) {
         if (idEvaluado == null) {
             return new ApiResponse<>(400, "El parámetro idEvaluado es obligatorio.", null);
         }
@@ -47,14 +47,14 @@ public class EstadisticaServiceImpl implements EstadisticaService {
             return new ApiResponse<>(400, "Los valores de tipo de actividad deben ser numéricos válidos.", null);
         }
 
-        List<ActividadDTO> actividades = actividadClient.obtenerActividadesPorEvaluado(idEvaluado, idPeriodo);
+        List<ActividadDTO> actividades = actividadClient.obtenerActividadesPorEvaluado(idEvaluado, idPeriodo, token);
         logger.debug("📦 Actividades recibidas para idEvaluado {}: {}", idEvaluado, actividades.size());
 
         if (actividades.isEmpty()) {
             return new ApiResponse<>(404, "No se encontraron actividades para el docente", null);
         }
 
-        UsuarioDTO docente = usuarioClient.obtenerUsuarioPorId(idEvaluado);
+        UsuarioDTO docente = usuarioClient.obtenerUsuarioPorId(idEvaluado, token);
         if (docente == null) {
             return new ApiResponse<>(404, "Docente no encontrado", null);
         }
@@ -65,8 +65,7 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         Map<String, Map<String, List<ActividadEvaluadaDTO>>> agrupado = agruparPorDepartamentoYTipo(wrappers);
         List<EvaluacionDepartamentoDTO> evaluaciones = construirRespuestaAgrupada(agrupado);
 
-        return new ApiResponse<>(200, "Comparación generada correctamente",
-                new ComparacionActividadDTO(docente, evaluaciones));
+        return new ApiResponse<>(200, "Comparación generada correctamente", new ComparacionActividadDTO(docente, evaluaciones));
     }
 
     private List<Integer> parsearIds(String idTipoActividad) {
@@ -74,11 +73,7 @@ public class EstadisticaServiceImpl implements EstadisticaService {
             return List.of();
 
         try {
-            return Arrays.stream(idTipoActividad.split(","))
-                    .map(String::trim)
-                    .filter(p -> !p.isEmpty())
-                    .map(Integer::parseInt)
-                    .toList();
+            return Arrays.stream(idTipoActividad.split(",")).map(String::trim).filter(p -> !p.isEmpty()).map(Integer::parseInt).toList();
         } catch (NumberFormatException e) {
             logger.error("❌ Error al parsear tipo de actividad: {}", e.getMessage());
             return null;
@@ -92,10 +87,7 @@ public class EstadisticaServiceImpl implements EstadisticaService {
     
         List<TipoActividadDTO> tiposDisponibles = tipoActividadClient.obtenerTipoActividad();
         
-        Set<Integer> tiposValidos = tiposDisponibles.stream()
-                .map(TipoActividadDTO::getOidTipoActividad)
-                .filter(idTipoActividad::contains)
-                .collect(Collectors.toSet());
+        Set<Integer> tiposValidos = tiposDisponibles.stream().map(TipoActividadDTO::getOidTipoActividad).filter(idTipoActividad::contains).collect(Collectors.toSet());
 
     
         if (tiposValidos.isEmpty()) {
@@ -104,28 +96,19 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         }
     
         List<ActividadDTO> filtradas = actividades.stream()
-                .filter(a -> a.getTipoActividad() != null &&
-                             tiposValidos.contains(a.getTipoActividad().getOidTipoActividad()))
-                .toList();
+            .filter(a -> a.getTipoActividad() != null && tiposValidos.contains(a.getTipoActividad().getOidTipoActividad())).toList();
     
         return filtradas;
     }
 
     private List<ActividadEvaluadaWrapper> construirWrappers(List<ActividadDTO> actividades, UsuarioDTO docente) {
-        return actividades.stream()
-                .map(act -> construirWrapper(act, docente))
-                .filter(Objects::nonNull)
-                .toList();
+        return actividades.stream().map(act -> construirWrapper(act, docente)).filter(Objects::nonNull).toList();
     }
 
     private ActividadEvaluadaWrapper construirWrapper(ActividadDTO act, UsuarioDTO docente) {
-        String departamento = docente.getUsuarioDetalle() != null
-                ? docente.getUsuarioDetalle().getDepartamento()
-                : null;
+        String departamento = docente.getUsuarioDetalle() != null ? docente.getUsuarioDetalle().getDepartamento() : null;
 
-        String tipoActividad = act.getTipoActividad() != null
-                ? act.getTipoActividad().getNombre()
-                : null;
+        String tipoActividad = act.getTipoActividad() != null ? act.getTipoActividad().getNombre() : null;
 
         if (departamento == null || tipoActividad == null) {
             logger.warn("❗ Actividad omitida (departamento o tipoActividad nulo). ID: {}", act.getOidActividad());
@@ -133,11 +116,8 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         }
 
         String nombreActividad = act.getAtributos() != null
-                ? act.getAtributos().stream()
-                        .filter(attr -> "ACTIVIDAD".equals(attr.getCodigoAtributo()))
-                        .map(AtributoDTO::getValor).findFirst()
-                        .orElse(act.getNombreActividad())
-                : act.getNombreActividad();
+            ? act.getAtributos().stream().filter(attr -> "ACTIVIDAD".equals(attr.getCodigoAtributo())).map(AtributoDTO::getValor).findFirst().orElse(act.getNombreActividad())
+            : act.getNombreActividad();
 
         if (nombreActividad == null) {
             logger.warn("❌ Actividad sin nombre. ID: {}", act.getOidActividad());
@@ -147,32 +127,21 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         Double fuente1 = obtenerCalificacionPorTipoFuente(act, "1");
         Double fuente2 = obtenerCalificacionPorTipoFuente(act, "2");
 
-        return new ActividadEvaluadaWrapper(
-                departamento,
-                tipoActividad,
-                new ActividadEvaluadaDTO(nombreActividad, fuente1, fuente2));
+        return new ActividadEvaluadaWrapper(departamento, tipoActividad, new ActividadEvaluadaDTO(nombreActividad, fuente1, fuente2));
     }
 
     private Double obtenerCalificacionPorTipoFuente(ActividadDTO act, String tipoFuente) {
-        return act.getFuentes().stream()
-                .filter(f -> tipoFuente.equals(f.getTipoFuente()) && f.getCalificacion() != null)
-                .map(FuenteDTO::getCalificacion)
-                .findFirst()
-                .orElse(null);
+        return act.getFuentes().stream().filter(f -> tipoFuente.equals(f.getTipoFuente()) && f.getCalificacion() != null)
+            .map(FuenteDTO::getCalificacion).findFirst().orElse(null);
     }
 
-    private Map<String, Map<String, List<ActividadEvaluadaDTO>>> agruparPorDepartamentoYTipo(
-            List<ActividadEvaluadaWrapper> wrappers) {
+    private Map<String, Map<String, List<ActividadEvaluadaDTO>>> agruparPorDepartamentoYTipo(List<ActividadEvaluadaWrapper> wrappers) {
         return wrappers.stream()
-                .collect(Collectors.groupingBy(
-                        ActividadEvaluadaWrapper::departamento,
-                        Collectors.groupingBy(
-                                ActividadEvaluadaWrapper::tipoActividad,
-                                Collectors.mapping(ActividadEvaluadaWrapper::actividad, Collectors.toList()))));
+            .collect(Collectors.groupingBy(ActividadEvaluadaWrapper::departamento,Collectors.groupingBy(
+                ActividadEvaluadaWrapper::tipoActividad, Collectors.mapping(ActividadEvaluadaWrapper::actividad, Collectors.toList()))));
     }
 
-    private List<EvaluacionDepartamentoDTO> construirRespuestaAgrupada(
-            Map<String, Map<String, List<ActividadEvaluadaDTO>>> agrupado) {
+    private List<EvaluacionDepartamentoDTO> construirRespuestaAgrupada(Map<String, Map<String, List<ActividadEvaluadaDTO>>> agrupado) {
         return agrupado.entrySet().stream()
                 .map(entry -> new EvaluacionDepartamentoDTO(
                         entry.getKey(),
