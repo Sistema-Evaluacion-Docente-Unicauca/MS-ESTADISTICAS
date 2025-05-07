@@ -59,7 +59,7 @@ public class EstadisticaServiceImpl implements EstadisticaService {
             return new ApiResponse<>(404, "Docente no encontrado", null);
         }
 
-        actividades = filtrarPorTipoActividad(actividades, tipoActividadIds);
+        actividades = filtrarPorTipoActividad(actividades, tipoActividadIds, token);
         List<ActividadEvaluadaWrapper> wrappers = construirWrappers(actividades, docente);
 
         Map<String, Map<String, List<ActividadEvaluadaDTO>>> agrupado = agruparPorDepartamentoYTipo(wrappers);
@@ -80,19 +80,19 @@ public class EstadisticaServiceImpl implements EstadisticaService {
         }
     }
 
-    private List<ActividadDTO> filtrarPorTipoActividad(List<ActividadDTO> actividades, List<Integer> idTipoActividad) {
+    private List<ActividadDTO> filtrarPorTipoActividad(List<ActividadDTO> actividades, List<Integer> idTipoActividad, String token) {
         if (idTipoActividad == null || idTipoActividad.isEmpty()) {
-            return actividades; // No se filtró por tipo, retorna todas
+            return actividades;
         }
     
-        List<TipoActividadDTO> tiposDisponibles = tipoActividadClient.obtenerTipoActividad();
+        List<TipoActividadDTO> tiposDisponibles = tipoActividadClient.obtenerTipoActividad(token);
         
         Set<Integer> tiposValidos = tiposDisponibles.stream().map(TipoActividadDTO::getOidTipoActividad).filter(idTipoActividad::contains).collect(Collectors.toSet());
 
     
         if (tiposValidos.isEmpty()) {
             logger.warn("⚠️ Ningún tipo de actividad válido encontrado en el catálogo.");
-            return List.of(); // No hay coincidencias válidas
+            return List.of();
         }
     
         List<ActividadDTO> filtradas = actividades.stream()

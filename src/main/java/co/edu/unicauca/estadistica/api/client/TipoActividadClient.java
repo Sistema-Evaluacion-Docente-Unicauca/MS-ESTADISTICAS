@@ -8,8 +8,6 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
@@ -35,31 +33,15 @@ public class TipoActividadClient extends BaseRestClient {
      */
     public TipoActividadDTO obtenerPorId(Integer idTipoActividad, String token) {
         String url = baseUrl + "tipo-actividad/" + idTipoActividad;
-        return get(url, new ParameterizedTypeReference<>() {}, token);
+        return get(url, new ParameterizedTypeReference<>() {
+        }, token);
     }
 
-    public List<TipoActividadDTO> obtenerTipoActividad() {
-        String url = baseUrl + "tipo-actividad";
-    
-        try {
-            ResponseEntity<PageResponse<TipoActividadDTO>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.GET,
-                    null,
-                    new ParameterizedTypeReference<>() {}
-            );
-    
-            PageResponse<TipoActividadDTO> result = response.getBody();
-    
-            if (result != null && result.getContent() != null) {
-                logger.info("✅ Tipos de actividad recibidos: {} elementos", result.getContent().size());
-                return result.getContent();
-            }
-    
-        } catch (Exception e) {
-            logger.error("❌ Error al obtener tipos de actividad: {}", e.getMessage(), e);
-        }
-    
-        return List.of();
+    public List<TipoActividadDTO> obtenerTipoActividad(String token) {
+        String url = baseUrl + "tipo-actividad?page=0&size=1000";
+
+        PageResponse<TipoActividadDTO> response = getPage(url, new ParameterizedTypeReference<>() {}, token);
+
+        return response != null ? response.getContent() : List.of();
     }
 }
