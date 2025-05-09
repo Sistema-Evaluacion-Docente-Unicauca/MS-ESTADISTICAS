@@ -23,6 +23,9 @@ public class AuthHeaderUtil {
     }
 
     private static String limpiarToken(String token) {
-        return token.replace("Bearer ", "").replace("\"", "").trim();
+        if (token != null && token.startsWith("Bearer ")) {
+            return token.substring(7).trim();
+        }
+        return token != null ? token.trim() : null;
     }
 }
